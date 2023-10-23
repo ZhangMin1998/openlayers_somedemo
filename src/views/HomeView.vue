@@ -10,7 +10,7 @@
         <el-option v-for="item in selectList" :key="item.value" :label="item.label" :value="item.value"> </el-option>
       </el-select>
 
-      <!-- <el-button @click="addPic">添加图片标注</el-button> -->
+      <el-button @click="addPic">添加图片标注</el-button>
       <!-- <el-button @click="addText">添加文字标注</el-button> -->
       <!-- <el-button @click="addPicAndText">添加图文标注</el-button> -->
       <!-- <el-button @click="addPopup">添加popup</el-button> -->
@@ -354,6 +354,44 @@ export default {
         // 清空绘制图形
         this.vector.setSource(this.source)
       }
+    },
+    // 添加图片标注
+    addPic () {
+      this.clearMap()
+      const createLabelStyle = (feature) => {
+        return new ol.style.Style({
+          image: new ol.style.Icon({
+            anchor: [0.5, 60],
+            anchorOrigin: 'top-right',
+            anchorXUnits: 'fraction',
+            anchorYUnits: 'pixels',
+            offsetOrigin: 'top-right',
+            // offset:[0,10],
+            // 图标缩放比例
+            scale: 0.2,
+            // 透明度
+            opacity: 0.5,
+            // 图标的url
+            src: require('@/assets/logo.png')
+          })
+        })
+      }
+      // 实例化Vector要素，通过矢量图层添加到地图容器中
+      const iconFeature = new ol.Feature({
+        geometry: new ol.geom.Point(ol.proj.transform([114.769, 25.522], 'EPSG:4326', 'EPSG:3857'))
+      })
+      iconFeature.setStyle(createLabelStyle(iconFeature))
+      // 矢量标注的数据源
+      const vectorSource = new ol.source.Vector({
+        features: [iconFeature]
+      })
+      // 矢量标注图层
+      const vectorLayer = new ol.layer.Vector({
+        source: vectorSource
+      })
+      this.map.addLayer(vectorLayer)
+      // 将已添加的图层装起来
+      this.layerList.push(vectorLayer)
     }
   }
 }
