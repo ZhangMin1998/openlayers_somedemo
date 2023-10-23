@@ -32,7 +32,8 @@ export default {
   },
   data () {
     return {
-      map: null
+      map: null,
+      layerList: []
     }
   },
   mounted () {
@@ -102,8 +103,18 @@ export default {
         controls: ol.control.defaults().extend([new ol.control.FullScreen(), new ol.control.ScaleLine()]) // 为什么不生效
       })
     },
+    // 清除图层
+    clearMap () {
+      if (this.layerList.length) {
+        this.layerList.forEach(item => {
+          this.map.removeLayer(item)
+        })
+      }
+      this.map.getOverlays().clear()
+    },
     // 添加点
     addPoint () {
+      this.clearMap()
       // 创建一个红点
       const redPoint = new ol.Feature({
         geometry: new ol.geom.Point(ol.proj.transform([114.759, 25.522], 'EPSG:4326', 'EPSG:3857'))
@@ -137,9 +148,12 @@ export default {
       })
       // 将绘制层添加到地图容器中
       this.map.addLayer(vector)
+      // 将已添加的图层存起来
+      this.layerList.push(vector)
     },
     // 添加线
     addLine () {
+      this.clearMap()
       // 创建一条黑线  2个点组成一条线
       const blackLine = new ol.Feature({
         geometry: new ol.geom.LineString([
@@ -176,9 +190,12 @@ export default {
       })
       // 将绘制层添加到地图容器中
       this.map.addLayer(vector)
+      // 将已添加的图层存起来
+      this.layerList.push(vector)
     },
     // 坐标添加矩形
     addArea () {
+      this.clearMap()
       // 创建一条黑线  2个点组成一条线
       const Rectangle = new ol.Feature({
         // geometry: new ol.geom.LineString([
@@ -217,6 +234,8 @@ export default {
       })
       // 将绘制层添加到地图容器中
       this.map.addLayer(vector)
+      // 将已添加的图层存起来
+      this.layerList.push(vector)
     },
     // 定位到某坐标
     toPoint () {
