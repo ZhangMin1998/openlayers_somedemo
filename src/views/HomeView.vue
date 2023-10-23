@@ -14,7 +14,7 @@
       <el-button @click="addText">添加文字标注</el-button>
       <el-button @click="addPicAndText">添加图文标注</el-button>
       <el-button @click="addHeatmap">添加热力图</el-button>
-      <!-- <el-button @click="addPointAndView">轨迹回放</el-button> -->
+      <el-button @click="addPointAndView">轨迹回放</el-button>
       <el-button @click="addManyPoints">添加点聚合地图</el-button>
     </div>
     <div ref="popup_content" class="popup_content" v-if="popupContentShow">
@@ -604,6 +604,148 @@ export default {
           this.map.addOverlay(popup)
         }
       })
+    },
+    // 轨迹回放
+    addPointAndView () {
+      this.clearMap()
+      this.moveToPosition([116.403, 39.924], 4)
+      const Coordinates = []
+      Coordinates.push(
+        ol.proj.transform([117.403, 42.924], 'EPSG:4326', 'EPSG:3857'),
+        ol.proj.transform([117.403, 41.924], 'EPSG:4326', 'EPSG:3857'),
+        ol.proj.transform([117.403, 40.924], 'EPSG:4326', 'EPSG:3857'),
+        ol.proj.transform([117.403, 38.924], 'EPSG:4326', 'EPSG:3857'),
+        ol.proj.transform([117.403, 37.924], 'EPSG:4326', 'EPSG:3857'),
+        ol.proj.transform([117.403, 32.924], 'EPSG:4326', 'EPSG:3857'),
+        ol.proj.transform([127.403, 42.924], 'EPSG:4326', 'EPSG:3857'),
+        ol.proj.transform([127.403, 52.924], 'EPSG:4326', 'EPSG:3857'),
+        ol.proj.transform([137.403, 49.924], 'EPSG:4326', 'EPSG:3857')
+      )
+      const passCoordinate = []
+
+      // 将离散点构建成一条折线
+      const route = new ol.geom.LineString(Coordinates)
+
+      const trackLineLength = route.getLength()
+      const pointCount = trackLineLength / (this.map.getView().getResolution() * 15)
+      for (let i = 1; i < pointCount; i++) {
+        passCoordinate.push(route.getCoordinateAt(i / pointCount))
+      }
+      passCoordinate.unshift(Coordinates[0])
+      passCoordinate.push(Coordinates[Coordinates.length - 1])
+
+      // 获取直线的坐标
+      const routeCoords = passCoordinate
+      const routeLength = routeCoords.length
+
+      const routeFeature = new ol.Feature({
+        type: 'route',
+        geometry: route
+      })
+      const geoMarker = new ol.Feature({
+        type: 'geoMarker',
+        geometry: new ol.geom.Point(routeCoords[0])
+      })
+      const startMarker = new ol.Feature({
+        type: 'icon',
+        geometry: new ol.geom.Point(routeCoords[0])
+      })
+      const endMarker = new ol.Feature({
+        type: 'icon',
+        geometry: new ol.geom.Point(routeCoords[routeLength - 1])
+      })
+
+      const styles = {
+        route: new ol.style.Style({
+          stroke: new ol.style.Stroke({
+            width: 6,
+            color: [237, 212, 0, 0.8]
+          })
+        }),
+        icon: new ol.style.Style({
+          image: new ol.style.Icon({
+            anchor: [0.5, 1],
+            src: require('@/assets/icon_address@2x.png')
+          })
+        }),
+        geoMarker: new ol.style.Style({
+          image: new ol.style.Circle({
+            radius: 7,
+            snapToPixel: false,
+            fill: new ol.style.Fill({ color: 'black' }),
+            stroke: new ol.style.Stroke({
+              color: 'white',
+              width: 2
+            })
+          })
+        })
+      }
+
+      let animating = false
+      let speed, now
+      const vectorLayer = new ol.layer.Vector({
+        source: new ol.source.Vector({
+          features: [routeFeature, geoMarker, startMarker, endMarker]
+        }),
+        style: function (feature) {
+          // 如果动画是激活的就隐藏geoMarker
+          if (animating && feature.get('type') === 'geoMarker') {
+            return null
+          }
+          return styles[feature.get('type')]
+        }
+      })
+      this.map.addLayer(vectorLayer)
+      // 将已添加的图层装起来
+      this.layerList.push(vectorLayer)
+
+      const moveFeature = event => {
+        const vectorContext = event.vectorContext
+        const frameState = event.frameState
+        if (animating) {
+          const elapsedTime = frameState.time - now
+          // 通过增加速度，来获得lineString坐标
+          const index = Math.round(speed * elapsedTime / 1000)
+          if (index >= routeLength) {
+            stopAnimation(true)
+            return
+          }
+          const currentPoint = new ol.geom.Point(routeCoords[index])
+          const feature = new ol.Feature(currentPoint)
+          vectorContext.drawFeature(feature, styles.geoMarker)
+        }
+        // 继续动画效果
+        this.map.render()
+      }
+
+      const startAnimation = () => {
+        if (animating) {
+          stopAnimation(false)
+        } else {
+          animating = true
+          now = new Date().getTime()
+          speed = 8000
+          // 隐藏geoMarker
+          geoMarker.setStyle(null)
+          // 设置显示范围
+          this.map.getView().setCenter(ol.proj.transform([116.403, 39.924], 'EPSG:4326', 'EPSG:3857'))
+          this.map.on('postcompose', moveFeature)
+          this.map.render()
+        }
+      }
+
+      const stopAnimation = (ended) => {
+        animating = false
+        // 如果动画取消就开始动画
+        const coord = ended ? routeCoords[routeLength - 1] : routeCoords[0]
+        geoMarker.getGeometry().setCoordinates(coord)
+        // 移除监听
+        this.map.un('postcompose', moveFeature)
+      }
+
+      setTimeout(() => {
+        startAnimation()
+      }, 2000)
     }
   }
 }
