@@ -11,7 +11,7 @@
       </el-select>
 
       <el-button @click="addPic">添加图片标注</el-button>
-      <!-- <el-button @click="addText">添加文字标注</el-button> -->
+      <el-button @click="addText">添加文字标注</el-button>
       <!-- <el-button @click="addPicAndText">添加图文标注</el-button> -->
       <!-- <el-button @click="addPopup">添加popup</el-button> -->
       <!-- <el-button @click="addPointAndView">轨迹回放</el-button> -->
@@ -147,6 +147,14 @@ export default {
         })
       }
       this.map.getOverlays().clear()
+    },
+    moveToPosition (postion, zoom = 14) {
+      this.map.getView().animate({
+        // 将地理坐标转为投影坐标
+        center: ol.proj.transform(postion, 'EPSG:4326', 'EPSG:3857'),
+        duration: 500,
+        zoom: zoom
+      })
     },
     // 添加点
     addPoint () {
@@ -390,6 +398,41 @@ export default {
         source: vectorSource
       })
       this.map.addLayer(vectorLayer)
+      // 将已添加的图层装起来
+      this.layerList.push(vectorLayer)
+    },
+    // 添加文字标注
+    addText () {
+      this.clearMap()
+      const createLabelStyle = (feature) => {
+        return new ol.style.Style({
+          text: new ol.style.Text({
+            textAlign: 'center', // 位置
+            textBaseline: 'middle', // 基准线
+            font: 'normal 14px 微软雅黑', // 文字样式
+            text: feature.get('name'), // 文本内容
+            fill: new ol.style.Fill({ color: '#aa3300' }), // 文本填充样式（即文字颜色）
+            stroke: new ol.style.Stroke({ color: '#ffcc33', width: 2 })
+          })
+        })
+      }
+      // 实例化Vector要素，通过矢量图层添加到地图容器中
+      const iconFeature = new ol.Feature({
+        geometry: new ol.geom.Point(ol.proj.transform([114.769, 25.522], 'EPSG:4326', 'EPSG:3857')),
+        name: '南康区',
+        population: 900
+      })
+      iconFeature.setStyle(createLabelStyle(iconFeature))
+      // 矢量标注的数据源
+      const vectorSource = new ol.source.Vector({
+        features: [iconFeature]
+      })
+      // 矢量标注图层
+      const vectorLayer = new ol.layer.Vector({
+        source: vectorSource
+      })
+      this.map.addLayer(vectorLayer)
+      this.moveToPosition([114.769, 25.522])
       // 将已添加的图层装起来
       this.layerList.push(vectorLayer)
     }
