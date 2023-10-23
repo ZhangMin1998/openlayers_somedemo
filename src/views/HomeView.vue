@@ -1,7 +1,7 @@
 <template>
   <div class="home">
     <div class="btns">
-      <el-button @click="addPoint">添加点</el-button>
+      <el-button @click="addPoint">添加红点</el-button>
       <!-- <el-button @click="addLine">添加线</el-button>
       <el-button @click="addArea">添加面</el-button>
       <el-button @click="toPoint">定位到某个点</el-button>
@@ -104,10 +104,39 @@ export default {
     },
     // 添加点
     addPoint () {
-      //创建一个点
-      const point = new ol.Feature({
-        geometry: new ol.geom.Point([11505912.0, 4011415.0])
+      // 创建一个红点
+      const redPoint = new ol.Feature({
+        geometry: new ol.geom.Point(ol.proj.transform([114.759, 25.522], 'EPSG:4326', 'EPSG:3857'))
       })
+      // 设置点1的样式信息
+      redPoint.setStyle(new ol.style.Style({
+        // 填充色
+        // fill: new ol.style.Fill({
+        //   color: 'rgba(255, 255, 255, 0.2)'
+        // }),
+        // 边线颜色
+        stroke: new ol.style.Stroke({
+          color: 'pink',
+          width: 2
+        }),
+        // 形状
+        image: new ol.style.Circle({
+          radius: 10,
+          fill: new ol.style.Fill({
+            color: 'red'
+          })
+        })
+      }))
+      // 实例化一个矢量图层Vector作为绘制层
+      const source = new ol.source.Vector({
+        features: [redPoint]
+      })
+      // 创建一个图层
+      const vector = new ol.layer.Vector({
+        source
+      })
+      // 将绘制层添加到地图容器中
+      this.map.addLayer(vector)
     }
   }
 }
