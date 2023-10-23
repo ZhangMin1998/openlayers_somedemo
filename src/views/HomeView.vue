@@ -1,5 +1,23 @@
 <template>
   <div class="home">
+    <div class="btns">
+      <el-button @click="addPoint">添加点</el-button>
+      <!-- <el-button @click="addLine">添加线</el-button>
+      <el-button @click="addArea">添加面</el-button>
+      <el-button @click="toPoint">定位到某个点</el-button>
+      <div>选择进行绘制</div>
+      <el-select v-model="selectValue" @change="selectChange">
+        <el-option v-for="item in selectList" :key="item.value" :label="item.label" :value="item.value"> </el-option>
+      </el-select>
+
+      <el-button @click="addPic">添加图片标注</el-button>
+      <el-button @click="addText">添加文字标注</el-button>
+      <el-button @click="addPicAndText">添加图文标注</el-button>
+      <el-button @click="addPopup">添加popup</el-button>
+      <el-button @click="addPointAndView">轨迹回放</el-button>
+      <el-button @click="addHeatmap">添加热力图</el-button>
+      <el-button @click="addManyPoints">添加点聚合地图</el-button> -->
+    </div>
     <div class="map" id="map"></div>
   </div>
 </template>
@@ -22,6 +40,7 @@ export default {
     this.initMap()
   },
   methods: {
+    // 初始化百度地图
     initMap () {
       const projection = ol.proj.get('EPSG:3857')
       // 分辨率
@@ -82,6 +101,13 @@ export default {
         }),
         controls: ol.control.defaults().extend([new ol.control.FullScreen(), new ol.control.ScaleLine()]) // 为什么不生效
       })
+    },
+    // 添加点
+    addPoint () {
+      //创建一个点
+      const point = new ol.Feature({
+        geometry: new ol.geom.Point([11505912.0, 4011415.0])
+      })
     }
   }
 }
@@ -89,6 +115,14 @@ export default {
 
 <style lang="less" scoped>
 .home{
+  .btns{
+    width: 100%;
+    // height: 100px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+  }
   .map{
     height: calc(100vh - 100px);
   }
