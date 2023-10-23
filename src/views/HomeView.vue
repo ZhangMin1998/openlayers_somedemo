@@ -13,9 +13,8 @@
       <el-button @click="addPic">添加图片标注</el-button>
       <el-button @click="addText">添加文字标注</el-button>
       <el-button @click="addPicAndText">添加图文标注</el-button>
-      <!-- <el-button @click="addPopup">添加popup</el-button> -->
+      <el-button @click="addHeatmap">添加热力图</el-button>
       <!-- <el-button @click="addPointAndView">轨迹回放</el-button> -->
-      <!-- <el-button @click="addHeatmap">添加热力图</el-button> -->
       <!-- <el-button @click="addManyPoints">添加点聚合地图</el-button> -->
     </div>
     <div class="map" id="map"></div>
@@ -24,6 +23,7 @@
 
 <script>
 import * as ol from 'openlayers'
+import heatData from './heatData'
 
 export default {
   name: 'HomeView',
@@ -484,6 +484,28 @@ export default {
       this.moveToPosition([114.769, 25.522])
       // 将已添加的图层装起来
       this.layerList.push(vectorLayer)
+    },
+    // 添加热力图
+    addHeatmap () {
+      this.clearMap()
+      this.moveToPosition([116.403, 39.924], 4)
+      // 创建一个Heatmap图层
+      const vector = new ol.layer.Heatmap({
+        source: new ol.source.Vector({
+          features: new ol.format.GeoJSON().readFeatures(heatData, {
+            dataProjection: 'EPSG:4326',
+            featureProjection: 'EPSG:3857'
+          })
+        }),
+        // 热点半径
+        radius: parseInt(15, 10),
+        // 模糊尺寸
+        blur: parseInt(25, 10)
+      })
+
+      this.map.addLayer(vector)
+      // 将已添加的图层装起来
+      this.layerList.push(vector)
     }
   }
 }
