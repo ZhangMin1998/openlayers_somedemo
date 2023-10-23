@@ -3,20 +3,20 @@
     <div class="btns">
       <el-button @click="addPoint">添加点</el-button>
       <el-button @click="addLine">添加线</el-button>
-      <!-- <el-button @click="addArea">添加面</el-button>
-      <el-button @click="toPoint">定位到某个点</el-button>
-      <div>选择进行绘制</div>
-      <el-select v-model="selectValue" @change="selectChange">
+      <el-button @click="addArea">添加面</el-button>
+      <!-- <el-button @click="toPoint">定位到某个点</el-button> -->
+      <!-- <div>选择进行绘制</div> -->
+      <!-- <el-select v-model="selectValue" @change="selectChange">
         <el-option v-for="item in selectList" :key="item.value" :label="item.label" :value="item.value"> </el-option>
-      </el-select>
+      </el-select> -->
 
-      <el-button @click="addPic">添加图片标注</el-button>
-      <el-button @click="addText">添加文字标注</el-button>
-      <el-button @click="addPicAndText">添加图文标注</el-button>
-      <el-button @click="addPopup">添加popup</el-button>
-      <el-button @click="addPointAndView">轨迹回放</el-button>
-      <el-button @click="addHeatmap">添加热力图</el-button>
-      <el-button @click="addManyPoints">添加点聚合地图</el-button> -->
+      <!-- <el-button @click="addPic">添加图片标注</el-button> -->
+      <!-- <el-button @click="addText">添加文字标注</el-button> -->
+      <!-- <el-button @click="addPicAndText">添加图文标注</el-button> -->
+      <!-- <el-button @click="addPopup">添加popup</el-button> -->
+      <!-- <el-button @click="addPointAndView">轨迹回放</el-button> -->
+      <!-- <el-button @click="addHeatmap">添加热力图</el-button> -->
+      <!-- <el-button @click="addManyPoints">添加点聚合地图</el-button> -->
     </div>
     <div class="map" id="map"></div>
   </div>
@@ -147,7 +147,7 @@ export default {
           ol.proj.transform([114.752, 25.512], 'EPSG:4326', 'EPSG:3857')
         ])
       })
-      // 设置点1的样式信息
+      // 设置线的样式信息
       blackLine.setStyle(new ol.style.Style({
         // 填充色
         // fill: new ol.style.Fill({
@@ -169,6 +169,47 @@ export default {
       // 实例化一个矢量图层Vector作为绘制层
       const source = new ol.source.Vector({
         features: [blackLine]
+      })
+      // 创建一个图层
+      const vector = new ol.layer.Vector({
+        source
+      })
+      // 将绘制层添加到地图容器中
+      this.map.addLayer(vector)
+    },
+    // 坐标添加矩形
+    addArea () {
+      // 创建一条黑线  2个点组成一条线
+      const Rectangle = new ol.Feature({
+        // geometry: new ol.geom.LineString([
+        //   ol.proj.transform([114.752, 25.532], 'EPSG:4326', 'EPSG:3857'),
+        //   ol.proj.transform([114.752, 25.512], 'EPSG:4326', 'EPSG:3857')
+        // ])
+        // eslint-disable-next-line
+        geometry: new ol.geom.Polygon.fromExtent([16208725.0, 3035304.0, 9841418.0, 5068487.0])
+      })
+      // 设置样式信息
+      Rectangle.setStyle(new ol.style.Style({
+        // 填充色
+        fill: new ol.style.Fill({
+          color: 'rgba(255, 255, 255, 0.2)'
+        }),
+        // 边线颜色
+        stroke: new ol.style.Stroke({
+          color: '#000',
+          width: 2
+        }),
+        // 形状
+        image: new ol.style.Circle({
+          radius: 10,
+          fill: new ol.style.Fill({
+            color: 'red'
+          })
+        })
+      }))
+      // 实例化一个矢量图层Vector作为绘制层
+      const source = new ol.source.Vector({
+        features: [Rectangle]
       })
       // 创建一个图层
       const vector = new ol.layer.Vector({
