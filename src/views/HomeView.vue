@@ -5,10 +5,10 @@
       <el-button @click="addLine">添加线</el-button>
       <el-button @click="addArea">添加面</el-button>
       <el-button @click="toPoint">定位到某个点</el-button>
-      <!-- <div>选择进行绘制</div> -->
-      <!-- <el-select v-model="selectValue" @change="selectChange">
+      <div>选择绘制</div>
+      <el-select v-model="selectValue" @change="selectChange">
         <el-option v-for="item in selectList" :key="item.value" :label="item.label" :value="item.value"> </el-option>
-      </el-select> -->
+      </el-select>
 
       <!-- <el-button @click="addPic">添加图片标注</el-button> -->
       <!-- <el-button @click="addText">添加文字标注</el-button> -->
@@ -33,12 +33,48 @@ export default {
   data () {
     return {
       map: null,
-      layerList: []
+      layerList: [],
+      selectList: [
+        {
+          label: '清空绘制图形',
+          value: 'None'
+        },
+        {
+          label: '点',
+          value: 'Point'
+        },
+        {
+          label: '线',
+          value: 'LineString'
+        },
+        {
+          label: '多边形',
+          value: 'Polygon'
+        },
+        {
+          label: '圆',
+          value: 'Circle'
+        },
+        {
+          label: '正方形',
+          value: 'Square'
+        },
+        {
+          label: '长方形',
+          value: 'Box'
+        }
+      ],
+      selectValue: 'None',
+      draw: '',
+      source: '',
+      vector: ''
     }
   },
   mounted () {
     // 初始化地图
     this.initMap()
+    // 生成一个绘制层，用于地图绘制
+    this.initDraw()
   },
   methods: {
     // 初始化百度地图
@@ -245,6 +281,79 @@ export default {
         duration: 1000,
         zoom: 12
       })
+    },
+    // 实例化一个矢量图层Vector作为绘制层
+    initDraw () {
+      this.source = new ol.source.Vector({ wrapX: false })
+      this.vector = new ol.layer.Vector({
+        source: this.source,
+        style: new ol.style.Style({
+          fill: new ol.style.Fill({
+            color: 'rgba(255, 255, 255, 0.2)'
+          }),
+          stroke: new ol.style.Stroke({
+            color: '#ffcc33',
+            width: 2
+          }),
+          image: new ol.style.Circle({
+            radius: 5,
+            fill: new ol.style.Fill({
+              color: '#ffcc33'
+            })
+          })
+        })
+      })
+      // 将绘制层添加到地图容器中
+      this.map.addLayer(this.vector)
+      // 将已添加的图层装起来
+      this.layerList.push(this.vector)
+    },
+    selectChange () {
+      // 移除绘制图形
+      this.map.removeInteraction(this.draw)
+      // 添加交互绘制功能控件
+      this.addInteraction()
+    },
+    addInteraction () {
+      let type
+      if (this.selectValue !== 'None') {
+        type = this.selectValue
+        if (this.source == null) {
+          this.source = new ol.source.Vector({ wrapX: false })
+          // 添加绘制层数据源
+          this.vector.setSource(this.source)
+        }
+
+        let geometryFunction, maxPoints
+        if (this.selectValue === 'Square') {
+          type = 'Circle' // 正方形图形（圆）
+          geometryFunction = ol.interaction.Draw.createRegularPolygon(4)
+        } else if (this.selectValue === 'Box') {
+          type = 'LineString'
+          maxPoints = 2
+          geometryFunction = (coordinates, geometry) => {
+            if (!geometry) { // 多边形
+              geometry = new ol.geom.Polygon(null)
+            }
+            const start = coordinates[0]
+            const end = coordinates[1]
+            geometry.setCoordinates([[start, [start[0], end[1]], end, [end[0], start[1]], start]])
+            return geometry
+          }
+        }
+        // 实例化交互绘制类对象并添加到地图容器中
+        this.draw = new ol.interaction.Draw({
+          source: this.source,
+          type,
+          geometryFunction, // 几何信息变更时调用函数
+          maxPoints // 最大点数
+        })
+        this.map.addInteraction(this.draw)
+      } else {
+        this.source = null
+        // 清空绘制图形
+        this.vector.setSource(this.source)
+      }
     }
   }
 }
