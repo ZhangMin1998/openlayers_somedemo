@@ -4,7 +4,7 @@
       <el-button @click="addPoint">添加点</el-button>
       <el-button @click="addLine">添加线</el-button>
       <el-button @click="addArea">添加面</el-button>
-      <!-- <el-button @click="toPoint">定位到某个点</el-button> -->
+      <el-button @click="toPoint">定位到某个点</el-button>
       <!-- <div>选择进行绘制</div> -->
       <!-- <el-select v-model="selectValue" @change="selectChange">
         <el-option v-for="item in selectList" :key="item.value" :label="item.label" :value="item.value"> </el-option>
@@ -217,6 +217,15 @@ export default {
       })
       // 将绘制层添加到地图容器中
       this.map.addLayer(vector)
+    },
+    // 定位到某坐标
+    toPoint () {
+      this.map.getView().animate({
+        // 将地理坐标转为投影坐标
+        center: ol.proj.transform([114.099, 22.451], 'EPSG:4326', 'EPSG:3857'),
+        duration: 1000,
+        zoom: 12
+      })
     }
   }
 }
