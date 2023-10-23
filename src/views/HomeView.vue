@@ -15,7 +15,12 @@
       <el-button @click="addPicAndText">添加图文标注</el-button>
       <el-button @click="addHeatmap">添加热力图</el-button>
       <!-- <el-button @click="addPointAndView">轨迹回放</el-button> -->
-      <!-- <el-button @click="addManyPoints">添加点聚合地图</el-button> -->
+      <el-button @click="addManyPoints">添加点聚合地图</el-button>
+    </div>
+    <div ref="popup_content" class="popup_content" v-if="popupContentShow">
+      <div class="fater">
+        <div class="son">这里是注解文字</div>
+      </div>
     </div>
     <div class="map" id="map"></div>
   </div>
@@ -67,7 +72,8 @@ export default {
       selectValue: 'None',
       draw: '',
       source: '',
-      vector: ''
+      vector: '',
+      popupContentShow: false
     }
   },
   mounted () {
@@ -506,6 +512,98 @@ export default {
       this.map.addLayer(vector)
       // 将已添加的图层装起来
       this.layerList.push(vector)
+    },
+    // 添加点聚合地图
+    addManyPoints () {
+      this.clearMap()
+      this.moveToPosition([116.403, 39.924], 7)
+
+      // 此示例创建1000个要素
+      const count = 1000
+      const features = new Array(count)
+      for (let i = 0; i < count; ++i) {
+        const coordinates = ol.proj.transform([Math.random() * 100 + 100, Math.random() * 10 + 35], 'EPSG:4326', 'EPSG:3857')
+        features[i] = new ol.Feature(new ol.geom.Point(coordinates))
+      }
+      // 矢量要素数据源
+      const source = new ol.source.Vector({
+        features: features
+      })
+      // 聚合标注数据源
+      const clusterSource = new ol.source.Cluster({
+        distance: 40,
+        source: source
+      })
+      // 加载聚合标注的矢量图层
+      const styleCache = {}
+      const clusters = new ol.layer.Vector({
+        source: clusterSource,
+        style: function (feature, resolution) {
+          const size = feature.get('features').length
+          let style = styleCache[size]
+          if (!style) {
+            style = [
+              new ol.style.Style({
+                image: new ol.style.Circle({
+                  radius: 20,
+                  stroke: new ol.style.Stroke({
+                    color: '#fff'
+                  }),
+                  fill: new ol.style.Fill({
+                    color: '#3399CC'
+                  })
+                }),
+                text: new ol.style.Text({
+                  text: size.toString(),
+                  fill: new ol.style.Fill({
+                    color: '#fff'
+                  })
+                })
+              })
+            ]
+            styleCache[size] = style
+          }
+          return style
+        }
+      })
+      this.map.addLayer(clusters)
+      // 将已添加的图层装起来
+      this.layerList.push(clusters)
+
+      // 下面的代码是让鼠标变成小手，并且有点击事件
+      this.map.on('pointermove', e => {
+        const pixel = this.map.getEventPixel(e.originalEvent)
+        const hit = this.map.hasFeatureAtPixel(pixel)
+        this.map.getTargetElement().style.cursor = hit ? 'pointer' : ''
+      })
+
+      // 为map添加点击事件监听，渲染弹出popup
+      this.map.on('click', evt => {
+        // 判断当前单击处是否有要素，捕获到要素时弹出popup
+        const feature = this.map.forEachFeatureAtPixel(evt.pixel, (feature, layer) => {
+          return feature
+        })
+        if (feature) {
+          console.log(666)
+          const popup = new ol.Overlay(({
+            // 要转换成overlay的HTML元素
+            element: this.$refs.popup_content,
+            // 当前窗口可见
+            autoPan: true,
+            // Popup放置的位置
+            positioning: 'bottom-center',
+            // 是否应该停止事件传播到地图窗口
+            stopEvent: false,
+            autoPanAnimation: {
+              // 当Popup超出地图边界时，为了Popup全部可见，地图移动的速度
+              duration: 250
+            }
+          }))
+          this.popupContentShow = true
+          popup.setPosition(evt.coordinates)
+          this.map.addOverlay(popup)
+        }
+      })
     }
   }
 }
@@ -521,8 +619,16 @@ export default {
     align-items: center;
     flex-wrap: wrap;
   }
+  .popup_content {
+    .fater {
+      width: 150px;
+      height: 50px;
+      background-color: aquamarine;
+    }
+  }
   .map{
-    height: calc(100vh - 100px);
+    margin-top: 100px;
+    height: calc(100vh - 200px);
   }
 }
 </style>
