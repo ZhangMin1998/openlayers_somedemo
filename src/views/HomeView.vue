@@ -137,7 +137,7 @@ export default {
         layers: [baiduLayer],
         // layers: [new ol.layer.Tile({ source: new ol.source.OSM() })],
         view: new ol.View({
-          center: ol.proj.transform([114.759, 25.522], 'EPSG:4326', 'EPSG:3857'),
+          center: ol.proj.transform([114.759, 25.522], 'EPSG:4326', 'EPSG:3857'), // ⼤地坐标系EPSG:4326   墨卡托EPSG:3857
           // center: ol.proj.fromLonLat([114.759, 25.522]),
           zoom: 15,
           minZoom: 3
